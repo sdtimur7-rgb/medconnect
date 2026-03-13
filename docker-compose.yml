@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: ankane/pgvector:latest
     container_name: medconnect_postgres
     environment:
       POSTGRES_DB: medconnect
@@ -90,17 +90,39 @@ services:
   chatwoot:
     image: chatwoot/chatwoot:latest
     container_name: medconnect_chatwoot
+    command: bundle exec rails s -p 3000 -b 0.0.0.0
     env_file: .env
     environment:
-      - POSTGRES_HOST=postgres
-      - POSTGRES_USERNAME=medconnect
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DATABASE=chatwoot
+      - DATABASE_URL=${CHATWOOT_DATABASE_URL}
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
       - FRONTEND_URL=${CHATWOOT_FRONTEND_URL}
+      - RAILS_ENV=production
+      - NODE_ENV=production
+      - INSTALLATION_ENV=docker
+      - RAILS_LOG_TO_STDOUT=true
+      - FORCE_SSL=false
     ports:
       - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  chatwoot_sidekiq:
+    image: chatwoot/chatwoot:latest
+    container_name: medconnect_chatwoot_sidekiq
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    env_file: .env
+    environment:
+      - DATABASE_URL=${CHATWOOT_DATABASE_URL}
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY}
+      - RAILS_ENV=production
+      - NODE_ENV=production
+      - INSTALLATION_ENV=docker
     depends_on:
       postgres:
         condition: service_healthy
