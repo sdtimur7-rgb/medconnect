@@ -130,5 +130,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  telegram-bot:
+    build: ./telegram-bot
+    container_name: medconnect_telegram_bot
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - CHATWOOT_URL=http://chatwoot:3000
+      - CHATWOOT_API_TOKEN=${CHATWOOT_API_TOKEN}
+      - CHATWOOT_ACCOUNT_ID=${CHATWOOT_ACCOUNT_ID}
+      - CHATWOOT_INBOX_ID=${CHATWOOT_INBOX_ID}
+    volumes:
+      - ./telegram-bot/logs:/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chatwoot:
+        condition: service_started
+
 volumes:
   postgres_data:
